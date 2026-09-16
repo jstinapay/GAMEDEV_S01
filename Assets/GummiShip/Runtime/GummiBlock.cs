@@ -17,6 +17,9 @@ namespace GummiShip
         [Tooltip("Center of the block in grid cells, ship-local.")]
         public Vector3 gridCenter = Vector3.zero;
 
+        [Tooltip("Paint slot: 0 = primary, 1 = secondary, 2 = accent. Used by the Classic scheme for hull banding.")]
+        public int paintIndex;
+
         [Tooltip("Size of the block in grid cells (allows fractional detail parts).")]
         public Vector3 sizeCells = Vector3.one;
 

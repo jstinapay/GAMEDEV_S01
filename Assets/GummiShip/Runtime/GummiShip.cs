@@ -18,6 +18,9 @@ namespace GummiShip
         [Tooltip("World size of one grid cell in meters.")]
         public float cellSize = 1f;
 
+        [Tooltip("Paint direction: Surveyor (teal/brass) or Classic (red/yellow/blue toy blocks).")]
+        public GummiPaintScheme paintScheme = GummiPaintScheme.Surveyor;
+
         readonly Dictionary<string, Transform> groups = new Dictionary<string, Transform>();
 
         static readonly GummiCategory[] GroupOrder =
@@ -83,18 +86,37 @@ namespace GummiShip
         /// running fore-aft regardless of the mesh's native orientation.
         /// </summary>
         public GameObject AddBlock(GummiBlockType type, Vector3 gridCenter,
-            Vector3 sizeCells, string label, bool recordUndo)
+            Vector3 sizeCells, string label, bool recordUndo, int paintIndex = 0)
         {
             PrimitiveType primitive;
             Quaternion rotation;
             ResolveVisual(type, out primitive, out rotation);
 
-            var go = GameObject.CreatePrimitive(primitive);
-            go.name = string.IsNullOrEmpty(label) ? type.ToString() : label;
+            GameObject go;
+            if (type == GummiBlockType.NoseCone)
+            {
+                go = new GameObject(string.IsNullOrEmpty(label) ? type.ToString() : label);
 #if UNITY_EDITOR
-            if (recordUndo)
-                Undo.RegisterCreatedObjectUndo(go, "Place " + type);
+                if (recordUndo)
+                    Undo.RegisterCreatedObjectUndo(go, "Place " + type);
 #endif
+                var filter = go.AddComponent<MeshFilter>();
+                filter.sharedMesh = GummiMeshLibrary.Pyramid();
+                go.AddComponent<MeshRenderer>();
+                var meshCollider = go.AddComponent<MeshCollider>();
+                meshCollider.sharedMesh = filter.sharedMesh;
+                meshCollider.convex = true;
+                rotation = Quaternion.identity;
+            }
+            else
+            {
+                go = GameObject.CreatePrimitive(primitive);
+                go.name = string.IsNullOrEmpty(label) ? type.ToString() : label;
+#if UNITY_EDITOR
+                if (recordUndo)
+                    Undo.RegisterCreatedObjectUndo(go, "Place " + type);
+#endif
+            }
             Transform group = GetGroup(type.CategoryOf());
 #if UNITY_EDITOR
             if (recordUndo)
@@ -115,13 +137,14 @@ namespace GummiShip
 
             var renderer = go.GetComponent<Renderer>();
             if (renderer != null)
-                renderer.sharedMaterial = GummiMaterialLibrary.Get(type);
+                renderer.sharedMaterial = GummiMaterialLibrary.Get(type, paintScheme, paintIndex);
 
             var meta = go.AddComponent<GummiBlock>();
             meta.blockType = type;
             meta.label = go.name;
             meta.gridCenter = gridCenter;
             meta.sizeCells = sizeCells;
+            meta.paintIndex = paintIndex;
             return go;
         }
 

@@ -19,12 +19,24 @@ namespace GummiShip
     }
 
     /// <summary>
+    /// Overall paint direction. Surveyor is the teal/brass expedition
+    /// look; Classic is the chunky red/yellow/blue toy-block look of
+    /// classic Kingdom Hearts Gummi Ships.
+    /// </summary>
+    public enum GummiPaintScheme
+    {
+        Surveyor,
+        Classic
+    }
+
+    /// <summary>
     /// Every placeable part in the Gummi Ship builder.
     /// Forward is +Z (sensor nose), up is +Y, port is -X.
     /// </summary>
     public enum GummiBlockType
     {
         HullBlock,
+        NoseCone,
         SensorHousing,
         SensorLens,
         Canopy,
@@ -57,6 +69,7 @@ namespace GummiShip
             switch (type)
             {
                 case GummiBlockType.HullBlock:
+                case GummiBlockType.NoseCone:
                 case GummiBlockType.FuelDrum:
                 case GummiBlockType.DrumStrap:
                 case GummiBlockType.LandingSkid:

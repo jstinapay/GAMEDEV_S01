@@ -13,6 +13,7 @@ namespace GummiShip
         public string label;
         public float px, py, pz;
         public float sx = 1f, sy = 1f, sz = 1f;
+        public int paint;
     }
 
     [Serializable]
@@ -20,6 +21,7 @@ namespace GummiShip
     {
         public string shipName;
         public float cellSize = 1f;
+        public string scheme = "Surveyor";
         public List<GummiBlockSave> blocks = new List<GummiBlockSave>();
     }
 
@@ -34,12 +36,14 @@ namespace GummiShip
             var save = new GummiShipSave();
             save.shipName = ship.name;
             save.cellSize = ship.cellSize;
+            save.scheme = ship.paintScheme.ToString();
             foreach (GummiBlock block in ship.GetBlocks())
             {
                 var entry = new GummiBlockSave();
                 entry.name = block.name;
                 entry.type = block.blockType.ToString();
                 entry.label = block.label;
+                entry.paint = block.paintIndex;
                 entry.px = block.gridCenter.x;
                 entry.py = block.gridCenter.y;
                 entry.pz = block.gridCenter.z;
@@ -68,6 +72,15 @@ namespace GummiShip
                 return 0;
 
             ship.cellSize = save.cellSize > 0f ? save.cellSize : 1f;
+            try
+            {
+                ship.paintScheme = (GummiPaintScheme)Enum.Parse(typeof(GummiPaintScheme),
+                    string.IsNullOrEmpty(save.scheme) ? "Surveyor" : save.scheme);
+            }
+            catch (ArgumentException)
+            {
+                ship.paintScheme = GummiPaintScheme.Surveyor;
+            }
             ship.ClearBlocks(recordUndo);
 
             int placed = 0;
@@ -88,7 +101,8 @@ namespace GummiShip
                     new Vector3(entry.px, entry.py, entry.pz),
                     new Vector3(entry.sx, entry.sy, entry.sz),
                     string.IsNullOrEmpty(entry.name) ? entry.type : entry.name,
-                    recordUndo);
+                    recordUndo,
+                    entry.paint);
                 placed++;
             }
             return placed;

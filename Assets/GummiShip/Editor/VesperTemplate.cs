@@ -48,13 +48,14 @@ namespace GummiShip
         public static GummiShip Build(string shipName, bool recordUndo)
         {
             var ship = GummiShip.NewShip(shipName);
+            ship.paintScheme = GummiPaintScheme.Classic;
 
-            // ---- Phase 1: keel-spine hull (bow z+ .. stern z-) ----
-            B(ship, GummiBlockType.HullBlock, 0f, 0f, 7f, 1f, 1f, 2f, "KeelSpine_Nose", recordUndo);
+            // ---- Phase 1: keel-spine hull, banded red/yellow (bow z+ .. stern z-) ----
+            B(ship, GummiBlockType.HullBlock, 0f, 0f, 7f, 1f, 1f, 2f, "KeelSpine_Nose", recordUndo, 1);
             B(ship, GummiBlockType.HullBlock, 0f, 0f, 4.5f, 1f, 1f, 3f, "KeelSpine_Fwd", recordUndo);
-            B(ship, GummiBlockType.HullBlock, 0f, 0f, 1f, 3f, 1f, 4f, "KeelSpine_Mid", recordUndo);
+            B(ship, GummiBlockType.HullBlock, 0f, 0f, 1f, 3f, 1f, 4f, "KeelSpine_Mid", recordUndo, 1);
             B(ship, GummiBlockType.HullBlock, 0f, 0f, -2.5f, 2f, 1f, 3f, "KeelSpine_Aft", recordUndo);
-            B(ship, GummiBlockType.HullBlock, 0f, 0.5f, -4.5f, 3f, 2f, 1f, "SternTransom", recordUndo);
+            B(ship, GummiBlockType.HullBlock, 0f, 0.5f, -4.5f, 3f, 2f, 1f, "SternTransom", recordUndo, 1);
             // Landing skids on struts (structure you can see).
             B(ship, GummiBlockType.LandingSkid, -1f, -0.95f, 0.5f, 0.3f, 0.3f, 3f, "Port_Skid", recordUndo);
             B(ship, GummiBlockType.LandingSkid, 1f, -0.95f, 0.5f, 0.3f, 0.3f, 3f, "Stbd_Skid", recordUndo);
@@ -63,9 +64,10 @@ namespace GummiShip
             B(ship, GummiBlockType.HullBlock, 1f, -0.6f, -0.5f, 0.25f, 0.5f, 0.25f, "Stbd_SkidStrut_Aft", recordUndo);
             B(ship, GummiBlockType.HullBlock, 1f, -0.6f, 1.5f, 0.25f, 0.5f, 0.25f, "Stbd_SkidStrut_Fwd", recordUndo);
 
-            // ---- Phase 2: bow sensor lantern (the ship's signature) ----
-            B(ship, GummiBlockType.SensorHousing, 0f, 0f, 8.4f, 1f, 1f, 1f, "SensorLantern_Housing", recordUndo);
-            B(ship, GummiBlockType.SensorLens, 0f, 0f, 9.15f, 0.9f, 0.9f, 0.9f, "SensorLantern_Lens", recordUndo);
+            // ---- Phase 2: red pyramid nose with a glowing blue sensor tip ----
+            // (classic-KH look; the surveyor's lantern eye becomes the cone's tip).
+            B(ship, GummiBlockType.NoseCone, 0f, 0f, 8.9f, 1.6f, 1.6f, 2.2f, "NoseCone", recordUndo);
+            B(ship, GummiBlockType.SensorLens, 0f, 0f, 10.05f, 0.5f, 0.5f, 0.5f, "SensorLantern_Tip", recordUndo);
 
             // ---- Phase 3: cockpit ----
             B(ship, GummiBlockType.Canopy, 0f, 0.85f, 3.2f, 1.3f, 0.8f, 2f, "Canopy", recordUndo);
@@ -125,9 +127,16 @@ namespace GummiShip
 
         static void B(GummiShip ship, GummiBlockType type,
             float x, float y, float z, float sx, float sy, float sz,
+            string label, bool recordUndo, int paint)
+        {
+            ship.AddBlock(type, new Vector3(x, y, z), new Vector3(sx, sy, sz), label, recordUndo, paint);
+        }
+
+        static void B(GummiShip ship, GummiBlockType type,
+            float x, float y, float z, float sx, float sy, float sz,
             string label, bool recordUndo)
         {
-            ship.AddBlock(type, new Vector3(x, y, z), new Vector3(sx, sy, sz), label, recordUndo);
+            B(ship, type, x, y, z, sx, sy, sz, label, recordUndo, 0);
         }
     }
 }

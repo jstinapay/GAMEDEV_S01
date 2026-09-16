@@ -23,6 +23,7 @@ namespace GummiShip
         bool eraseMode;
         GummiBlockType selectedType = GummiBlockType.HullBlock;
         Vector3 brushSize = Vector3.one;
+        int brushPaint;
         string fileName = "Vesper_SurveyCutter";
         string status = "Open or create a ship to begin.";
         Vector2 scroll;
@@ -37,6 +38,7 @@ namespace GummiShip
             new Dictionary<GummiBlockType, Vector3>
             {
                 { GummiBlockType.HullBlock, Vector3.one },
+                { GummiBlockType.NoseCone, new Vector3(1.6f, 1.6f, 2.2f) },
                 { GummiBlockType.SensorHousing, Vector3.one },
                 { GummiBlockType.SensorLens, new Vector3(0.9f, 0.9f, 0.9f) },
                 { GummiBlockType.Canopy, new Vector3(1.3f, 0.8f, 2f) },
@@ -153,6 +155,7 @@ namespace GummiShip
             }
             GUI.backgroundColor = Color.white;
             brushSize = EditorGUILayout.Vector3Field("Brush Size (cells)", brushSize);
+            brushPaint = EditorGUILayout.IntSlider("Brush Paint (0 primary, 1 secondary, 2 accent)", brushPaint, 0, 2);
             brushSize.x = Mathf.Max(0.1f, brushSize.x);
             brushSize.y = Mathf.Max(0.1f, brushSize.y);
             brushSize.z = Mathf.Max(0.1f, brushSize.z);
@@ -323,12 +326,12 @@ namespace GummiShip
         void PlaceAt(Vector3 cell)
         {
             string name = UniqueName(AutoName(selectedType, cell.x));
-            ship.AddBlock(selectedType, cell, brushSize, name, true);
+            ship.AddBlock(selectedType, cell, brushSize, name, true, brushPaint);
             if (mirrorX && Mathf.Abs(cell.x) > 0.001f)
             {
                 var mirrored = new Vector3(-cell.x, cell.y, cell.z);
                 ship.AddBlock(selectedType, mirrored, brushSize,
-                    UniqueName(GummiBlockTypeExtensions.MirrorName(name)), true);
+                    UniqueName(GummiBlockTypeExtensions.MirrorName(name)), true, brushPaint);
             }
             status = "Placed " + selectedType + " at " + cell + ".";
             SceneView.RepaintAll();
@@ -365,6 +368,7 @@ namespace GummiShip
                 case GummiBlockType.TurretBase: return "TailTurret_Base";
                 case GummiBlockType.TurretBarrel: return "TailTurret_Barrel";
                 case GummiBlockType.SensorLens: return "SensorLantern_Lens";
+                case GummiBlockType.NoseCone: return "NoseCone";
                 case GummiBlockType.SensorHousing: return "SensorLantern_Housing";
                 case GummiBlockType.Canopy: return "Canopy";
                 case GummiBlockType.CommDish: return "CommDish_OffsetPort";
