@@ -76,8 +76,11 @@ namespace GummiShip
 
         /// <summary>
         /// Adds one block to the correct system group.
-        /// gridCenter/sizeCells are in cells, ship-local. Primitive mesh,
-        /// orientation and material are derived from the block type.
+        /// gridCenter/sizeCells are in cells, ship-local axes (+Z forward).
+        /// sizeCells is interpreted in ship axes: for rotated block types
+        /// (cylinders/capsules point +Z) it is mapped back to local space,
+        /// so a size of (d, d, length) always yields a circular tube
+        /// running fore-aft regardless of the mesh's native orientation.
         /// </summary>
         public GameObject AddBlock(GummiBlockType type, Vector3 gridCenter,
             Vector3 sizeCells, string label, bool recordUndo)
@@ -103,7 +106,12 @@ namespace GummiShip
 #endif
             go.transform.localPosition = gridCenter * cellSize;
             go.transform.localRotation = rotation;
-            go.transform.localScale = sizeCells * cellSize;
+            // Map the ship-axis size back to the mesh's local space so the
+            // world-aligned bounding box always matches sizeCells. Abs keeps
+            // the scale positive (mirrored winding would flip normals).
+            Vector3 localSize = Quaternion.Inverse(rotation) * sizeCells;
+            localSize = new Vector3(Mathf.Abs(localSize.x), Mathf.Abs(localSize.y), Mathf.Abs(localSize.z));
+            go.transform.localScale = localSize * cellSize;
 
             var renderer = go.GetComponent<Renderer>();
             if (renderer != null)

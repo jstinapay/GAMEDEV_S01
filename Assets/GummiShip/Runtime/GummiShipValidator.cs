@@ -95,7 +95,7 @@ namespace GummiShip
                 bool found = false;
                 foreach (GummiBlock other in blocks)
                 {
-                    if (other == block || other.blockType != block.blockType)
+                    if (other == block || !MirrorTypesMatch(other.blockType, block.blockType))
                         continue;
                     Vector3 otherRel = ship.transform.InverseTransformPoint(BlockCenter(ship, other));
                     if (Mathf.Abs(otherRel.x + rel.x) < 0.15f
@@ -110,6 +110,17 @@ namespace GummiShip
                 if (!found)
                     issues.Add("WARN: '" + block.name + "' has no mirrored counterpart (intentional asymmetry should be documented).");
             }
+        }
+
+        static bool MirrorTypesMatch(GummiBlockType a, GummiBlockType b)
+        {
+            if (a == b)
+                return true;
+            // Port-red and starboard-green nav lights are a mirrored pair by convention.
+            if ((a == GummiBlockType.BeaconRed && b == GummiBlockType.BeaconGreen) ||
+                (a == GummiBlockType.BeaconGreen && b == GummiBlockType.BeaconRed))
+                return true;
+            return false;
         }
 
         static void CheckLayout(GummiShip ship, List<GummiBlock> blocks, List<string> issues)
