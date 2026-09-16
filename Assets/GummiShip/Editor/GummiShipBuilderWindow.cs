@@ -91,6 +91,12 @@ namespace GummiShip
             scroll = EditorGUILayout.BeginScrollView(scroll);
 
             EditorGUILayout.LabelField("Ship", EditorStyles.boldLabel);
+            if (ship == null)
+            {
+                GameObject sel = Selection.activeGameObject;
+                if (sel != null)
+                    ship = sel.GetComponentInParent<GummiShip>();
+            }
             ship = (GummiShip)EditorGUILayout.ObjectField("Active Ship", ship, typeof(GummiShip), true);
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("New Ship"))
