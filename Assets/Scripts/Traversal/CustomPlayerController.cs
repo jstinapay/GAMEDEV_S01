@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Custom CharacterController movement + jump (double-credit: no Starter Assets).
-/// World-aligned WASD, manual gravity, platform-riding via mover deltas.
+/// Camera-relative WASD (falls back to world-aligned), manual gravity, platform-riding via mover deltas.
 /// Works with PlayerInput Send Messages (OnMove / OnJump / OnSprint).
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
@@ -13,6 +13,8 @@ public class CustomPlayerController : MonoBehaviour
     public float moveSpeed = 6f;
     public float sprintMultiplier = 1.5f;
     public float rotationSpeed = 12f;
+    [Tooltip("When assigned, WASD is relative to this camera's facing. Auto-finds MainCamera.")]
+    public Transform cameraTransform;
 
     [Header("Jump / Gravity")]
     public float jumpHeight = 2f;
@@ -34,6 +36,8 @@ public class CustomPlayerController : MonoBehaviour
         controller = GetComponent<CharacterController>();
         if (spawnPoint == Vector3.zero)
             spawnPoint = transform.position;
+        if (cameraTransform == null && Camera.main != null)
+            cameraTransform = Camera.main.transform;
     }
 
     void Update()
@@ -53,6 +57,19 @@ public class CustomPlayerController : MonoBehaviour
         float speed = moveSpeed * (sprintHeld ? sprintMultiplier : 1f);
         Vector3 wishDir = new Vector3(moveInput.x, 0f, moveInput.y);
         if (wishDir.sqrMagnitude > 1f) wishDir.Normalize();
+        // Camera-relative movement so W follows your view. Falls back to world-aligned.
+        if (cameraTransform != null)
+        {
+            Vector3 camFwd = cameraTransform.forward;
+            camFwd.y = 0f;
+            if (camFwd.sqrMagnitude > 0.001f)
+            {
+                camFwd.Normalize();
+                float camYaw = Mathf.Atan2(camFwd.x, camFwd.z) * Mathf.Rad2Deg;
+                wishDir = Quaternion.Euler(0f, camYaw, 0f) * new Vector3(moveInput.x, 0f, moveInput.y);
+                if (wishDir.sqrMagnitude > 1f) wishDir.Normalize();
+            }
+        }
 
         // Ride moving / rotating platforms standing underneath us.
         Vector3 carry = ConsumePlatformCarry();
