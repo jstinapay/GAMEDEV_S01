@@ -1,6 +1,7 @@
 using UnityEngine;
 
-/// <summary>Ping-pong mover for vertical (required) and horizontal (bonus) platforms.</summary>
+/// <summary>Sine mover for vertical (required) and horizontal (bonus) platforms. Eases at the ends.</summary>
+[DefaultExecutionOrder(-100)]
 public class MovingPlatform : MonoBehaviour
 {
     public enum MoveAxis { Vertical, HorizontalX, HorizontalZ }
@@ -9,6 +10,7 @@ public class MovingPlatform : MonoBehaviour
     public MoveAxis axis = MoveAxis.Vertical;
     public float distance = 2f;
     public float speed = 1.2f;
+    [Tooltip("Phase offset in radians.")]
     public float phaseOffset;
 
     Vector3 basePosition;
@@ -25,7 +27,8 @@ public class MovingPlatform : MonoBehaviour
 
     void Update()
     {
-        float t = Mathf.PingPong(Time.time * speed + phaseOffset, distance * 2f) - distance;
+        // Sine eases velocity to zero at each end; PingPong reverses instantly and jerks.
+        float t = Mathf.Sin(Time.time * speed + phaseOffset) * distance;
         Vector3 target = basePosition;
         switch (axis)
         {

@@ -1,6 +1,7 @@
 using UnityEngine;
 
 /// <summary>Continuous rotation for platforms (required).</summary>
+[DefaultExecutionOrder(-100)]
 public class RotatingPlatform : MonoBehaviour
 {
     [Header("Rotation")]
