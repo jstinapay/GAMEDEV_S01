@@ -4,14 +4,13 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Custom CharacterController movement + jump (double-credit: no Starter Assets).
 /// Camera-relative WASD (falls back to world-aligned), manual gravity, platform-riding via mover deltas.
-/// Works with PlayerInput Send Messages (OnMove / OnJump / OnSprint).
+/// Works with PlayerInput Send Messages (OnMove / OnJump).
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class CustomPlayerController : MonoBehaviour
 {
     [Header("Move")]
     public float moveSpeed = 6f;
-    public float sprintMultiplier = 1.5f;
     public float rotationSpeed = 12f;
     [Tooltip("When assigned, WASD is relative to this camera's facing. Auto-finds MainCamera.")]
     public Transform cameraTransform;
@@ -26,10 +25,16 @@ public class CustomPlayerController : MonoBehaviour
 
     CharacterController controller;
     Vector2 moveInput;
-    bool sprintHeld;
     float verticalVelocity;
     bool locked;
     Vector3 platformCarry;
+
+    /// <summary>True while the speed-boost bonus is active. Drives the camera FOV kick.</summary>
+    public bool IsSpeedBoosted => bonusSpeedMultiplier > 1.05f;
+
+    [Header("Bonus (Laser Corridor)")]
+    [Tooltip("Temporary multiplier from speed bonus panels. Reset on respawn.")]
+    public float bonusSpeedMultiplier = 1f;
 
     void Awake()
     {
@@ -53,8 +58,7 @@ public class CustomPlayerController : MonoBehaviour
         bool grounded = controller.isGrounded;
         if (grounded && verticalVelocity < 0f)
             verticalVelocity = groundedStickForce;
-
-        float speed = moveSpeed * (sprintHeld ? sprintMultiplier : 1f);
+        float speed = moveSpeed * bonusSpeedMultiplier;
         Vector3 wishDir = new Vector3(moveInput.x, 0f, moveInput.y);
         if (wishDir.sqrMagnitude > 1f) wishDir.Normalize();
         // Camera-relative movement so W follows your view. Falls back to world-aligned.
@@ -131,21 +135,23 @@ public class CustomPlayerController : MonoBehaviour
             verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
     }
 
-    public void OnSprint(InputValue value)
-    {
-        sprintHeld = value.isPressed;
-    }
-
     public void Respawn()
     {
         controller.enabled = false;
         transform.position = spawnPoint;
         verticalVelocity = 0f;
         moveInput = Vector2.zero;
+        bonusSpeedMultiplier = 1f;
         controller.enabled = true;
     }
 
     public void SetSpawn(Vector3 pos) { spawnPoint = pos; }
+
+    /// <summary>Called by BonusPanel for temporary speed boosts.</summary>
+    public void SetSpeedMultiplier(float mult) { bonusSpeedMultiplier = Mathf.Max(0.1f, mult); }
+
+    /// <summary>Clears temporary bonus effects (speed). Called on reset/death.</summary>
+    public void ResetEffects() { bonusSpeedMultiplier = 1f; }
 
     public void Lock()
     {

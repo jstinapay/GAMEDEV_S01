@@ -33,7 +33,20 @@ public class CameraFollow : MonoBehaviour
     [Tooltip("Lock and hide the cursor in first person for true FPS look.")]
     public bool lockCursorInFirstPerson = true;
 
+    [Header("First Person Only")]
+    [Tooltip("When true, third-person chase and scroll zoom are disabled. Camera stays at head height with always-on mouse look. Traversal scene leaves this OFF.")]
+    public bool firstPersonOnly;
+    [Tooltip("Set by UI when GameOver/Complete panels open so the cursor is freed for buttons.")]
+    public bool uiOpen;
+
     public bool IsFirstPerson { get; private set; }
+
+    [Header("Speed Boost Feel (first person)")]
+    public float normalFov = 62f;
+    public float boostFov = 72f;
+    public float fovSpeed = 6f;
+
+    CustomPlayerController playerCtrl;
 
     Vector3 baseDir;
     float baseDist;
@@ -52,13 +65,51 @@ public class CameraFollow : MonoBehaviour
         pitch = Mathf.Asin(Mathf.Clamp(baseDir.y, -1f, 1f)) * Mathf.Rad2Deg;
         targetDist = Mathf.Clamp(baseDist, minDistance, maxDistance);
         currentDist = targetDist;
+        if (firstPersonOnly)
+        {
+            // Face down +Z (corridor direction) with level pitch.
+            yaw = 0f;
+            pitch = 0f;
+            targetDist = minDistance;
+            currentDist = minDistance;
+        }
         if (target != null)
             playerRenderers = target.GetComponentsInChildren<Renderer>(true);
+    }
+
+    CustomPlayerController PlayerCtrl()
+    {
+        if (playerCtrl == null && target != null)
+            playerCtrl = target.GetComponent<CustomPlayerController>();
+        return playerCtrl;
+    }
+
+    void ApplyBoostFov()
+    {
+        var cam = GetComponent<Camera>();
+        if (cam == null) return;
+        var ctrl = PlayerCtrl();
+        bool boosted = ctrl != null && ctrl.IsSpeedBoosted;
+        float want = boosted ? boostFov : normalFov;
+        cam.fieldOfView = Mathf.Lerp(cam.fieldOfView, want, 1f - Mathf.Exp(-fovSpeed * Time.deltaTime));
     }
 
     void LateUpdate()
     {
         if (target == null) return;
+
+        if (firstPersonOnly)
+        {
+            IsFirstPerson = true;
+            ApplyFirstPersonMeshes();
+            ApplyCursorState();
+            UpdateFreeLookFP();
+            ApplyBoostFov();
+            Vector3 fpDir = OrbitDir();
+            transform.position = target.position + Vector3.up * headHeight + fpDir * 0.1f;
+            transform.rotation = Quaternion.LookRotation(-fpDir);
+            return;
+        }
 
         float scroll = ReadScroll();
         // New Input System reports small values (~1 per notch), old reports ~120.
@@ -142,6 +193,13 @@ public class CameraFollow : MonoBehaviour
     void ApplyCursorState()
     {
         if (!Application.isPlaying) return;
+        if (uiOpen)
+        {
+            // End panels open: free the cursor so buttons are clickable.
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+            return;
+        }
         if (!lockCursorInFirstPerson) return;
         if (IsFirstPerson)
         {
@@ -154,6 +212,25 @@ public class CameraFollow : MonoBehaviour
             Cursor.visible = true;
         }
     }
+
+    void UpdateFreeLookFP()
+    {
+        if (!freeLook) return;
+#if ENABLE_INPUT_SYSTEM
+        if (Mouse.current == null) return;
+        // Locked cursor: delta is the mouse movement. Unlocked (UI open): freeze view.
+        if (Cursor.lockState != CursorLockMode.Locked) return;
+        Vector2 delta = Mouse.current.delta.ReadValue();
+#else
+        if (Cursor.lockState != CursorLockMode.Locked) return;
+        Vector2 delta = new Vector2(Input.GetAxis("Mouse X") * 50f * Time.deltaTime, Input.GetAxis("Mouse Y") * 50f * Time.deltaTime);
+#endif
+        yaw += (invertLookX ? delta.x : -delta.x) * lookSensitivity;
+        pitch += (invertLookY ? delta.y : -delta.y) * lookSensitivity;
+        pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+    }
+
+    public void SetUIOpen(bool open) { uiOpen = open; }
 
     Vector3 OrbitDir()
     {
