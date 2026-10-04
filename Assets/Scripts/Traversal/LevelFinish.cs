@@ -57,7 +57,7 @@ public class LevelFinish : MonoBehaviour
     {
         finished = false;
         if (fallRespawn == null)
-            fallRespawn = Object.FindFirstObjectByType<FallRespawn>();
+            fallRespawn = Object.FindAnyObjectByType<FallRespawn>();
         if (fallRespawn != null)
             fallRespawn.ResetFalls();
         if (player != null)
