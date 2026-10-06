@@ -52,9 +52,41 @@ public class BonusPanel : MonoBehaviour
         if (ui == null)
             ui = Object.FindAnyObjectByType<LaserCorridorUI>();
         initialScale = transform.localScale;
-        if (icon == null)
-            icon = BonusIconLibrary.AttachIcon(transform, bonusType);
+        EnsureIcon();
         ApplyTypeVisual();
+    }
+
+    /// <summary>Ensures a floating icon exists and matches the current bonus type.</summary>
+    public void EnsureIcon()
+    {
+        if (icon == null)
+        {
+            icon = BonusIconLibrary.AttachIcon(transform, bonusType);
+            return;
+        }
+        // If type changed after Awake (builder moves/retypes panels), rebuild icon.
+        var rend = icon.GetComponent<SpriteRenderer>();
+        var want = BonusIconLibrary.GetIcon(bonusType);
+        if (rend == null || rend.sprite != want)
+        {
+            Object.Destroy(icon);
+            icon = BonusIconLibrary.AttachIcon(transform, bonusType);
+            // Keep it visible if panel is active.
+            if (!consumed && icon != null) icon.SetActive(true);
+        }
+        else if (!consumed && !icon.activeSelf)
+        {
+            icon.SetActive(true);
+        }
+    }
+
+    /// <summary>Called by builder when it retypes/moves an existing panel at runtime.</summary>
+    public void RefreshAfterMove()
+    {
+        EnsureIcon();
+        ApplyTypeVisual();
+        if (!consumed && icon != null && !icon.activeSelf)
+            icon.SetActive(true);
     }
 
     void OnValidate()
@@ -195,6 +227,7 @@ public class BonusPanel : MonoBehaviour
     {
         consumed = false;
         if (respawnRoutine != null) { StopCoroutine(respawnRoutine); respawnRoutine = null; }
+        EnsureIcon();
         if (icon != null) icon.SetActive(true);
         ApplyTypeVisual();
     }

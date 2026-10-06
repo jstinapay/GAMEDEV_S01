@@ -42,10 +42,14 @@ public static class BonusIconLibrary
         var rend = go.AddComponent<SpriteRenderer>();
         rend.sprite = sprite;
         rend.color = Color.white;
+        rend.enabled = true;
+        rend.sortingOrder = 10;
+        // Ensure it renders in URP + always faces camera via BonusIconFloat.
         var floaty = go.AddComponent<BonusIconFloat>();
         floaty.follow = panel;
         floaty.height = height;
         floaty.size = size;
+        go.SetActive(true);
         return go;
     }
 

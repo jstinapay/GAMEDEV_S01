@@ -428,6 +428,7 @@ public static class LaserCorridorBuilder
             bp.duration = duration;
             bp.magnitude = magnitude;
             bp.healAmount = heal;
+            bp.RefreshAfterMove();
         }
     }
 
@@ -515,11 +516,20 @@ public static class LaserCorridorBuilder
             new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(12f, -12f), "HP: 100/100");
         ui.bonusText = EnsureText(hud.transform, "BonusText", font, 20, TextAnchor.UpperLeft,
             new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(12f, -44f), "");
-        EnsureText(hud.transform, "HintText", font, 15, TextAnchor.UpperLeft,
-            new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(12f, -76f),
-            "FIRST PERSON - Mouse look  -  WASD dodge  -  SPACE jumps low bars  -  Reach the green gate");
         EnsureText(hud.transform, "Crosshair", font, 28, TextAnchor.MiddleCenter,
             new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, "+");
+        // Hint removed: delete any stale HintText so it never reappears.
+        var staleHint = hud.transform.Find("HintText");
+        if (staleHint != null)
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying) Object.DestroyImmediate(staleHint.gameObject);
+            else Object.Destroy(staleHint.gameObject);
+#else
+            Object.Destroy(staleHint.gameObject);
+#endif
+        }
+        ui.hintText = null;
         ui.damageFlash = EnsureFlash(hud.transform);
 
         // End panels live under FinishHUD like the Traversal project.

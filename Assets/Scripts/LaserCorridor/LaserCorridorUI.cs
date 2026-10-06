@@ -240,11 +240,21 @@ public class LaserCorridorUI : MonoBehaviour
         bonusFlash = img;
     }
 
-    /// <summary>Brings older built scenes up to FP spec: crosshair + hint.</summary>
+    /// <summary>Brings older built scenes up to FP spec: crosshair (hint removed).</summary>
     void EnsureFirstPersonHud()
     {
         if (hintText != null)
-            hintText.text = "FIRST PERSON - Mouse look  -  WASD dodge  -  SPACE jumps low bars  -  Reach the green gate";
+        {
+            if (Application.isPlaying) Destroy(hintText.gameObject);
+            else DestroyImmediate(hintText.gameObject);
+            hintText = null;
+        }
+        var staleHint = transform.Find("HintText");
+        if (staleHint != null)
+        {
+            if (Application.isPlaying) Destroy(staleHint.gameObject);
+            else DestroyImmediate(staleHint.gameObject);
+        }
         if (transform.Find("Crosshair") != null) return;
         var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         var go = new GameObject("Crosshair");
